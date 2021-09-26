@@ -5,7 +5,7 @@ A tool created to speed up the Fortnite porting process to Blender.
 ## Installation
 
 To use FortnitePorting, you need to have **[Blender 2.93.0+](https://www.blender.org/download/)** and **[.NET 5.0](https://dotnet.microsoft.com/download/dotnet/thank-you/runtime-desktop-5.0.10-windows-x64-installer)** installed.
-* **[Download](https://github.com/halfuwu/FortnitePorting/releases/latest)** the latest release
+* **[Download the latest release](https://github.com/halfuwu/FortnitePorting/releases/latest)**
 * Extract all the files to a folder on your computer
 * Install the **FortnitePortingAddon.zip** addon in Blender
 
