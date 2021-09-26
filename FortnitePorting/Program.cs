@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using CUE4Parse.Encryption.Aes;
@@ -19,6 +20,7 @@ namespace FortnitePorting
     {
         public static readonly string ConfigPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "config.json");
         public static readonly string MappingsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Mappings");
+        public static readonly string ProcessedPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "processed");
         public static readonly SimpleLogger Logger = new ("FortnitePorting");
         public static DefaultFileProvider Provider;
         
@@ -26,6 +28,8 @@ namespace FortnitePorting
         
         public static void Main(string[] args)
         {
+            Console.WriteLine();
+            args = new[] { "-Character", "cluck "};
             if (args.Length == 0) Logger.Log("No program arguments found!", ELogLevel.Critical);
             
             if (args[0] == "-fill")
@@ -38,17 +42,20 @@ namespace FortnitePorting
             LoadConfig();
             LoadProvider();
 
-            switch (args[0])
+            var input = args[1].Trim();
+            switch (args[0].ToLower())
             {
-                case "-c":
-                    Character.ProcessCharacter(args[1]);
+                case "-c": 
+                case "-character":
+                    Character.ProcessCharacter(input);
                     break;
+
             }
         }
 
         static void LoadConfig()
         {
-            if (!File.Exists(ConfigPath)) Logger.Log("Config file does not exist", ELogLevel.Critical);
+            if (!File.Exists(ConfigPath)) Logger.Log($"Config file does not exist at {ConfigPath}", ELogLevel.Critical);
             
             Logger.Log($"Reading Config File {ConfigPath}");
             _config = JsonConvert.DeserializeObject<Config>(File.ReadAllText(ConfigPath));
