@@ -28,8 +28,6 @@ namespace FortnitePorting
         
         public static void Main(string[] args)
         {
-            Console.WriteLine();
-            args = new[] { "-Character", "drift "};
             if (args.Length == 0) Logger.Log("No program arguments found!", ELogLevel.Critical);
             
             if (args[0] == "-fill")
