@@ -39,9 +39,9 @@ namespace FortnitePorting.Utils
         public class VariantMaterialParameters
         {
             public string MaterialToAlter;
-            public List<TextureParameter> TextureParameters;
-            public List<ScalarParameter> FloatParameters;
-            public List<VectorParameter> ColorParameters;
+            public List<TextureParameter> TextureParameters = new();
+            public List<ScalarParameter> FloatParameters = new();
+            public List<VectorParameter> ColorParameters = new();
         }
         public class TextureParameter
         {
@@ -85,7 +85,7 @@ namespace FortnitePorting.Utils
             public List<CharacterPart> DefaultVariant { get; set; } = new();
             public List<CharacterPart> VariantParts { get; set; } = new();
             public List<VariantMaterial> VariantMaterials { get; set; } = new();
-            public VariantMaterialParameters VariantMaterialParameters { get; set; } = new();
+            public List<VariantMaterialParameters> VariantMaterialParameters { get; set; } = new();
         }
         
         public enum EFortCustomPartType

@@ -9,6 +9,7 @@ using CUE4Parse.UE4.Assets.Exports.SkeletalMesh;
 using CUE4Parse.UE4.Assets.Exports.StaticMesh;
 using CUE4Parse.UE4.Assets.Exports.Texture;
 using CUE4Parse.UE4.Assets.Objects;
+using CUE4Parse.UE4.Objects.Core.i18N;
 using CUE4Parse.UE4.Objects.Core.Math;
 using CUE4Parse.UE4.Objects.UObject;
 using CUE4Parse.Utils;
@@ -86,7 +87,6 @@ namespace FortnitePorting.Utils
                 ProcessedCharacterParts.Add(ProcessedCharacterPart);
             }
         }
-
         public static MaterialParameters FillMaterialParams(this UMaterialInstanceConstant MaterialInstance)
         {
             var Parameters = new MaterialParameters();
@@ -164,6 +164,124 @@ namespace FortnitePorting.Utils
 
             return Parameters;
         }
+
+        public static void FillVariants(UObject[] ItemVariants, Processed processed)
+        {
+            foreach (var Variant in ItemVariants)
+            {
+                var SelectedVariant = Variant.ExportType switch
+                {
+                    "FortCosmeticCharacterPartVariant" => PromptSelection(Variant, "PartOptions"),
+                    "FortCosmeticMaterialVariant" => PromptSelection(Variant, "MaterialOptions"),
+                    "FortCosmeticParticleVariant" => PromptSelection(Variant, "ParticleOptions"),
+                    _ => default
+                };
+
+                if (SelectedVariant.TryGetValue(out UObject[] VariantParts, "VariantParts"))
+                {
+                    FillCharacterParts(VariantParts, processed.VariantParts);
+                }
+                if (SelectedVariant.TryGetValue(out FStructFallback[] VariantMaterials, "VariantMaterials"))
+                {
+                    foreach (var VariantMaterial in VariantMaterials)
+                    {
+                        if (VariantMaterial.TryGetValue(out UMaterialInstanceConstant OverrideMaterial, "OverrideMaterial"))
+                        {
+                            var Material = new VariantMaterial
+                            {
+                                OverrideMaterial = VariantMaterial.Get<FSoftObjectPath>("OverrideMaterial").AssetPathName.Text,
+                                MaterialOverrideIndex = VariantMaterial.Get<int>("MaterialOverrideIndex"),
+                                MaterialToSwap = VariantMaterial.Get<FSoftObjectPath>("MaterialToSwap").AssetPathName.Text,
+                                MaterialParameters = OverrideMaterial.FillMaterialParams()
+                            };
+                            
+                            processed.VariantMaterials.Add(Material);
+                        }
+                    }
+                }
+                if (SelectedVariant.TryGetValue(out FStructFallback[] VariantMaterialParams, "VariantMaterialParams"))
+                {
+                    foreach (var VariantParam in VariantMaterialParams)
+                    {
+                        var ProcessedParams = new VariantMaterialParameters();
+                        ProcessedParams.MaterialToAlter = VariantParam.Get<FSoftObjectPath>("MaterialToAlter").AssetPathName.Text;
+                    
+                        if (VariantParam.TryGetValue(out FStructFallback[] TextureParams, "TextureParams"))
+                        {
+                            foreach (var Param in TextureParams)
+                            {
+                                if (Param.TryGetValue(out UTexture2D Texture, "Value"))
+                                {
+                                    var Parameter = new TextureParameter
+                                    {
+                                        Info = Param.Get<FName>("ParamName").Text,
+                                        Value = Texture.GetPathName()
+                                    };
+                                    Texture.ExportObject();
+                                    ProcessedParams.TextureParameters.Add(Parameter);
+                                }
+                            }
+                        }
+                        if (VariantParam.TryGetValue(out FStructFallback[] FloatParams, "FloatParams"))
+                        {
+                            foreach (var Param in FloatParams)
+                            {
+                                var Parameter = new ScalarParameter
+                                {
+                                    Info = Param.Get<FName>("ParamName").Text,
+                                    Value = Param.Get<float>("Value")
+                                };
+                                ProcessedParams.FloatParameters.Add(Parameter);
+                            }
+                        }
+                        if (VariantParam.TryGetValue(out FStructFallback[] ColorParams, "ColorParams"))
+                        {
+                            foreach (var Param in ColorParams)
+                            {
+                                var Parameter = new VectorParameter
+                                {
+                                    Info = Param.Get<FName>("ParamName").Text,
+                                    Value = Param.Get<FLinearColor>("Value").ToParamColor()
+                                };
+                                ProcessedParams.ColorParameters.Add(Parameter);
+                            }
+                        }
+                        
+                        processed.VariantMaterialParameters.Add(ProcessedParams);
+                    }
+                }
+            }
+        }
+
+        private static FStructFallback PromptSelection(UObject Variant, string ParamName)
+        {
+            var Options = Variant.Get<FStructFallback[]>(ParamName);
+            var VariantChannelName = Variant.GetOrDefault("VariantChannelName", new FText("UNNAMED"));
+            
+            Logger.Log($"{VariantChannelName} Variants", SimpleLogger.ELogLevel.Variant);
+            for (var i = 0; i < Options.Length; i++) Logger.Log($"{i}. {Options[i].Get<FText>("VariantName").Text}", SimpleLogger.ELogLevel.Variant);
+
+            int SelectedIndex;
+            while (true)
+            {
+                try
+                {
+                    Logger.Log("Enter Number of Variant:", SimpleLogger.ELogLevel.Variant);
+                    SelectedIndex = int.Parse(Console.ReadLine());
+
+                    if (SelectedIndex > Options.Length - 1 || SelectedIndex < 0)
+                        Logger.Log("Index of Variant does not exist!", SimpleLogger.ELogLevel.Error);
+                    else 
+                        break;
+                }
+                catch (FormatException)
+                {
+                    Logger.Log("Variant can only be selected with a number.");
+                }
+            }
+
+            return Options[SelectedIndex];
+        }
         private static string FixPath(string fullPath, string ext = null)
         {
             if (fullPath.StartsWith("/")) fullPath = fullPath[1..];
@@ -176,7 +294,7 @@ namespace FortnitePorting.Utils
             {
                 case USkeletalMesh SkelMesh:
                 {
-                    if (!File.Exists(FixPath(SkelMesh.Outer?.Name ?? SkelMesh.Name, "psk")))
+                    if (!File.Exists(FixPath((SkelMesh.Outer?.Name ?? SkelMesh.Name) + "_LOD0", "psk")))
                     {
                         var Save = new MeshExporter(SkelMesh, ELodFormat.FirstLod, false);
                         Logger.Log(Save.TryWriteToDir(SaveDirectory, out string SaveFileName)
@@ -187,7 +305,7 @@ namespace FortnitePorting.Utils
                 }
                 case UStaticMesh StaticMesh:
                 {
-                    if (!File.Exists(FixPath(StaticMesh.Outer?.Name ?? StaticMesh.Name, "pskx")))
+                    if (!File.Exists(FixPath((StaticMesh.Outer?.Name ?? StaticMesh.Name) + "_LOD0", "pskx")))
                     {
                         var Save = new MeshExporter(StaticMesh, ELodFormat.FirstLod, false);
                         Logger.Log(Save.TryWriteToDir(SaveDirectory, out string SaveFileName)
@@ -209,7 +327,7 @@ namespace FortnitePorting.Utils
                     break;
                 }
                 case UAnimSequence Anim:
-                    if (!File.Exists(FixPath(Anim.Outer?.Name ?? Anim.Name, "psa")))
+                    if (!File.Exists(FixPath((Anim.Outer?.Name ?? Anim.Name) + "_SEQ0", "psa")))
                     {
                         var Save = new AnimExporter(Anim);
                         Logger.Log(Save.TryWriteToDir(SaveDirectory, out string SaveFileName)

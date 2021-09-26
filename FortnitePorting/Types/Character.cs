@@ -32,7 +32,7 @@ namespace FortnitePorting.Types
 
                 if (CharacterItemDefinition.TryGetValue(out UObject[] ItemVariants, "ItemVariants"))
                 {
-                    //AssetUtils.FillVariants(ItemVariants);
+                    AssetUtils.FillVariants(ItemVariants, ProcessedFile);
                 }
                 
                 var json = JsonConvert.SerializeObject(ProcessedFile, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore, Formatting = Formatting.Indented });

@@ -29,7 +29,7 @@ namespace FortnitePorting
         public static void Main(string[] args)
         {
             Console.WriteLine();
-            args = new[] { "-Character", "cluck "};
+            args = new[] { "-Character", "drift "};
             if (args.Length == 0) Logger.Log("No program arguments found!", ELogLevel.Critical);
             
             if (args[0] == "-fill")
@@ -64,6 +64,7 @@ namespace FortnitePorting
         }
         static void LoadProvider()
         {
+            Logger.Log($"Loading Game Files at {_config.PaksDirectory}");
             Provider = new DefaultFileProvider(_config.PaksDirectory, SearchOption.TopDirectoryOnly, true)
             {
                 MappingsContainer = new FileUsmapTypeMappingsProvider(GetNewestUsmap(MappingsPath)),
@@ -74,8 +75,9 @@ namespace FortnitePorting
             
             foreach (var entry in _config.DynamicKeys)
             {
-                IAesVfsReader vfs = Provider.UnloadedVfs.FirstOrDefault(pak => pak.Name.Equals(entry.FileName));
+                var vfs = Provider.UnloadedVfs.FirstOrDefault(pak => pak.Name.Equals(entry.FileName));
                 if (vfs != null) Provider.SubmitKey(vfs.EncryptionKeyGuid, new FAesKey(entry.Key));
+                else Logger.Log($"Failed to Submit Key {entry.Key} for {entry.FileName}");
             }
         } 
         private static void PromptExit(int code)

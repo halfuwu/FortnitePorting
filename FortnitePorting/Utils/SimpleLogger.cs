@@ -21,6 +21,7 @@ namespace FortnitePorting.Utils
                 ELogLevel.Error => ConsoleColor.Red,
                 ELogLevel.Info => ConsoleColor.DarkCyan,
                 ELogLevel.Critical => ConsoleColor.DarkRed,
+                ELogLevel.Variant => ConsoleColor.Magenta,
                 _ => Console.ForegroundColor
             };
             Console.Write($"{logLevel}: ");
@@ -39,6 +40,7 @@ namespace FortnitePorting.Utils
         {
             Debug,
             Info,
+            Variant,
             Warn,
             Error,
             Critical
