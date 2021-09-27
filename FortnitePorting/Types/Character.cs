@@ -13,7 +13,7 @@ namespace FortnitePorting.Types
         public static void ProcessCharacter(string input)
         {
             var ProcessedFile = new Processed();
-            var path = "FortniteGame/Content/Athena/Items/Cosmetics/Characters/" + input;
+            var path = $"FortniteGame/Content/Athena/Items/Cosmetics/Characters/{input}.{input}";
             if (!input.StartsWith("CID_"))
             {
                 path = BenbotApi.GetCosmeticPath(BenbotApi.EBackendType.AthenaCharacter, input);
@@ -34,7 +34,7 @@ namespace FortnitePorting.Types
                 {
                     AssetUtils.FillVariants(ItemVariants, ProcessedFile);
                 }
-                
+
                 var json = JsonConvert.SerializeObject(ProcessedFile, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore, Formatting = Formatting.Indented });
                 Directory.CreateDirectory(ProcessedPath);
                 File.WriteAllText(Path.Combine(ProcessedPath, CharacterItemDefinition.Name + ".json"), json);

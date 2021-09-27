@@ -16,6 +16,7 @@ namespace FortnitePorting.Utils
         {
             public string MaterialPath;
             public int MaterialOverrideIndex;
+            public bool IsOverride = false;
             public MaterialParameters MaterialParameters;
         }
         

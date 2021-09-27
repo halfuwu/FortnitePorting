@@ -49,6 +49,10 @@ namespace FortnitePorting
                 case "-character":
                     Character.ProcessCharacter(input);
                     break;
+                case "-b": 
+                case "-backpack":
+                    Backpack.ProcessBackpack(input);
+                    break;
             }
         }
 
@@ -70,7 +74,6 @@ namespace FortnitePorting
             Logger.Log($"Loading Game Files at {_config.PaksDirectory}");
             Provider = new DefaultFileProvider(_config.PaksDirectory, SearchOption.TopDirectoryOnly, true);
             Provider.Initialize();
-            Provider.UnloadAllVfs();
             Provider.SubmitKey(new FGuid(), new FAesKey(_config.MainKey));
 
             var usmap = GetNewestUsmap("Mappings");
@@ -86,13 +89,14 @@ namespace FortnitePorting
                 else Logger.Log($"Failed to Submit Key {entry.Key} for {entry.FileName}");
             }
         }
-        private static void PromptExit(int code)
+
+        public static void PromptExit(int code)
         {
             Console.WriteLine("Press any button to exit...");
-            Console.ReadLine();
+            Console.ReadKey();
             Environment.Exit(code);
         }
-        
+
         private static string GetNewestUsmap(string mappingsFolder)
         {
             if (!Directory.Exists(mappingsFolder))

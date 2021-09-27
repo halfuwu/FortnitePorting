@@ -30,9 +30,7 @@ namespace FortnitePorting.Utils
             
             if (logLevel == ELogLevel.Critical)
             {
-                Console.WriteLine("Press any button to exit...");
-                Console.ReadKey();
-                Environment.Exit(1);
+                Program.PromptExit(1);
             }
         }
 

@@ -40,21 +40,20 @@ namespace FortnitePorting.Utils
                 }
 
                 var Materials = new List<Material>();
-                if (SkeletalMesh.TryConvert(out var ConvertedMesh))
+                var index = 0;
+                foreach (var mat in SkeletalMesh.Materials)
                 {
-                    foreach (var (Section, Idx) in ConvertedMesh.LODs[0].Sections.Value.Enumerate())
+                    if (mat.Material.IsNull) continue;
+                    if (mat.Material.TryLoad(out UMaterialInstanceConstant MaterialInstance))
                     {
-                        if (Section.Material == null) continue;
-                        if (Section.Material.TryLoad(out UMaterialInstanceConstant MaterialInstance))
+                        var Material = new Material
                         {
-                            var Material = new Material
-                            {
-                                MaterialPath = MaterialInstance.GetPathName(),
-                                MaterialOverrideIndex = Idx,
-                                MaterialParameters = MaterialInstance.FillMaterialParams()
-                            };
-                            Materials.Add(Material);
-                        }
+                            MaterialPath = MaterialInstance.GetPathName(),
+                            MaterialOverrideIndex = index,
+                            MaterialParameters = MaterialInstance.FillMaterialParams()
+                        };
+                        Materials.Add(Material);
+                        index++;
                     }
                 }
 
@@ -70,6 +69,7 @@ namespace FortnitePorting.Utils
                             {
                                 MaterialPath = MaterialInstance.GetPathName(),
                                 MaterialOverrideIndex = Idx,
+                                IsOverride = true,
                                 MaterialParameters = MaterialInstance.FillMaterialParams()
                             };
                             Materials.Add(Material);
@@ -343,8 +343,5 @@ namespace FortnitePorting.Utils
         
         public static IEnumerable<(T item, int index)> Enumerate<T>(this IEnumerable<T> self)
             => self.Select((item, index) => (item, index));
-
-        public static FColor ToParamColor(this FLinearColor color)
-            => color.ToFColor(false); // sRGB?
     }
 }
