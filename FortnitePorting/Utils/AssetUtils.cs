@@ -119,7 +119,7 @@ namespace FortnitePorting.Utils
                 var Parameter = new VectorParameter
                 {
                     Info = Param.ParameterInfo.Name.Text,
-                    Value = Param.ParameterValue.Value.ToParamColor()
+                    Value = Param.ParameterValue.Value
                 };
                 Parameters.VectorParameters.Add(Parameter);
             }
@@ -131,12 +131,13 @@ namespace FortnitePorting.Utils
                     {
                         var Parameter = new VectorParameter
                         {
-                            Info =  Param.Get<FStructFallback>("ParameterInfo").Get<FName>("Name").Text,
-                            Value = new VectorParameter.Color(
-                                Param.Get<bool>("R") ? 1 : 0,
-                                Param.Get<bool>("G") ? 1 : 0,
-                                Param.Get<bool>("B") ? 1 : 0,
-                                Param.Get<bool>("A") ? 1 : 0)
+                            Info = Param.Get<FStructFallback>("ParameterInfo").Get<FName>("Name").ToString(),
+                            Value = new FLinearColor(
+                                Convert.ToByte(Param.Get<bool>("R")),
+                                Convert.ToByte(Param.Get<bool>("G")),
+                                Convert.ToByte(Param.Get<bool>("B")),
+                                Convert.ToByte(Param.Get<bool>("A"))
+                                )
                         };
                         Parameters.ComponentMaskParameters.Add(Parameter);
                     }
@@ -158,10 +159,13 @@ namespace FortnitePorting.Utils
             {
                 if (SubsurfaceProfile.TryGetValue(out FStructFallback Settings, "Settings"))
                 {
-                    Parameters.SubsurfaceColor = Settings.Get<FLinearColor>("SubsurfaceColor").ToParamColor();
+                    Parameters.SubsurfaceInfo = new SubSurfaceProfile
+                    {
+                        ScatterRadius = Settings.GetOrDefault<float>("ScatterRadius", -1.0f),
+                        Color = Settings.Get<FLinearColor>("SubsurfaceColor"),
+                    };
                 }
             }
-
             return Parameters;
         }
 
@@ -204,7 +208,7 @@ namespace FortnitePorting.Utils
                     foreach (var VariantParam in VariantMaterialParams)
                     {
                         var ProcessedParams = new VariantMaterialParameters();
-                        ProcessedParams.MaterialToAlter = VariantParam.Get<FSoftObjectPath>("MaterialToAlter").AssetPathName.Text;
+                        ProcessedParams.MaterialToAlter = VariantParam.Get<FSoftObjectPath>("MaterialToAlter").AssetPathName.ToString();
                     
                         if (VariantParam.TryGetValue(out FStructFallback[] TextureParams, "TextureParams"))
                         {
@@ -214,7 +218,7 @@ namespace FortnitePorting.Utils
                                 {
                                     var Parameter = new TextureParameter
                                     {
-                                        Info = Param.Get<FName>("ParamName").Text,
+                                        Info = Param.Get<FName>("ParamName").ToString(),
                                         Value = Texture.GetPathName()
                                     };
                                     Texture.ExportObject();
@@ -228,7 +232,7 @@ namespace FortnitePorting.Utils
                             {
                                 var Parameter = new ScalarParameter
                                 {
-                                    Info = Param.Get<FName>("ParamName").Text,
+                                    Info = Param.Get<FName>("ParamName").ToString(),
                                     Value = Param.Get<float>("Value")
                                 };
                                 ProcessedParams.FloatParameters.Add(Parameter);
@@ -240,13 +244,12 @@ namespace FortnitePorting.Utils
                             {
                                 var Parameter = new VectorParameter
                                 {
-                                    Info = Param.Get<FName>("ParamName").Text,
-                                    Value = Param.Get<FLinearColor>("Value").ToParamColor()
+                                    Info = Param.Get<FName>("ParamName").ToString(),
+                                    Value = Param.Get<FLinearColor>("Value")
                                 };
                                 ProcessedParams.ColorParameters.Add(Parameter);
                             }
                         }
-                        
                         processed.VariantMaterialParameters.Add(ProcessedParams);
                     }
                 }
@@ -322,7 +325,7 @@ namespace FortnitePorting.Utils
                         Directory.CreateDirectory(TexturePath.Replace('\\', '/').SubstringBeforeLast('/'));
                         using var stream = new FileStream(TexturePath, FileMode.Create, FileAccess.Write);
                         Texture.Decode()?.Encode().AsStream().CopyTo(stream);
-                        Logger.Log($"Successfully saved LOD 0 as '.tga' for '{Texture.Name}'");
+                        Logger.Log($"Successfully saved LOD 0 as '.png' for '{Texture.Name}'");
                     }
                     break;
                 }
@@ -341,7 +344,7 @@ namespace FortnitePorting.Utils
         public static IEnumerable<(T item, int index)> Enumerate<T>(this IEnumerable<T> self)
             => self.Select((item, index) => (item, index));
 
-        public static VectorParameter.Color ToParamColor(this FLinearColor self)
-            => new (self.R, self.G, self.B, self.A);
+        public static FColor ToParamColor(this FLinearColor color)
+            => color.ToFColor(false); // sRGB?
     }
 }

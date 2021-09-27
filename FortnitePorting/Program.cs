@@ -1,17 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using CUE4Parse.Encryption.Aes;
 using CUE4Parse.FileProvider;
 using CUE4Parse.MappingsProvider;
 using CUE4Parse.UE4.Objects.Core.Misc;
-using CUE4Parse.UE4.Vfs;
 using FortnitePorting.Types;
 using FortnitePorting.Utils;
 using Newtonsoft.Json;
-
+using Serilog;
 using static FortnitePorting.Utils.SimpleLogger;
 
 namespace FortnitePorting
@@ -28,8 +26,7 @@ namespace FortnitePorting
         
         public static void Main(string[] args)
         {
-            Console.WriteLine();
-            args = new[] { "-Character", "drift "};
+            //Console.WriteLine();
             if (args.Length == 0) Logger.Log("No program arguments found!", ELogLevel.Critical);
             
             if (args[0] == "-fill")
@@ -38,7 +35,10 @@ namespace FortnitePorting
                 BenbotApi.UpdateMappings();
                 PromptExit(0);
             }
-            
+            Log.Logger = Log.Logger = new LoggerConfiguration()
+                .WriteTo.Console()
+                .CreateLogger();
+
             LoadConfig();
             LoadProvider();
 
@@ -49,14 +49,17 @@ namespace FortnitePorting
                 case "-character":
                     Character.ProcessCharacter(input);
                     break;
-
             }
         }
 
         static void LoadConfig()
         {
-            if (!File.Exists(ConfigPath)) Logger.Log($"Config file does not exist at {ConfigPath}", ELogLevel.Critical);
-            
+            if (!File.Exists(ConfigPath)) 
+            {
+                File.WriteAllText(ConfigPath, JsonConvert.SerializeObject(new Config()));
+                Logger.Log($"Config file does not exist at {ConfigPath}", ELogLevel.Critical);
+            }
+
             Logger.Log($"Reading Config File {ConfigPath}");
             _config = JsonConvert.DeserializeObject<Config>(File.ReadAllText(ConfigPath));
 
@@ -65,21 +68,24 @@ namespace FortnitePorting
         static void LoadProvider()
         {
             Logger.Log($"Loading Game Files at {_config.PaksDirectory}");
-            Provider = new DefaultFileProvider(_config.PaksDirectory, SearchOption.TopDirectoryOnly, true)
-            {
-                MappingsContainer = new FileUsmapTypeMappingsProvider(GetNewestUsmap(MappingsPath)),
-            };
+            Provider = new DefaultFileProvider(_config.PaksDirectory, SearchOption.TopDirectoryOnly, true);
             Provider.Initialize();
             Provider.UnloadAllVfs();
             Provider.SubmitKey(new FGuid(), new FAesKey(_config.MainKey));
-            
+
+            var usmap = GetNewestUsmap("Mappings");
+            if (usmap != String.Empty)
+                Provider.MappingsContainer = new FileUsmapTypeMappingsProvider(usmap);
+            else
+                Provider.LoadMappings(); // BenbotMappingProvider
+
             foreach (var entry in _config.DynamicKeys)
             {
                 var vfs = Provider.UnloadedVfs.FirstOrDefault(pak => pak.Name.Equals(entry.FileName));
                 if (vfs != null) Provider.SubmitKey(vfs.EncryptionKeyGuid, new FAesKey(entry.Key));
                 else Logger.Log($"Failed to Submit Key {entry.Key} for {entry.FileName}");
             }
-        } 
+        }
         private static void PromptExit(int code)
         {
             Console.WriteLine("Press any button to exit...");
@@ -89,6 +95,9 @@ namespace FortnitePorting
         
         private static string GetNewestUsmap(string mappingsFolder)
         {
+            if (!Directory.Exists(mappingsFolder))
+                return String.Empty;
+
             var directory = new DirectoryInfo(mappingsFolder);
             var selectedFilePath = String.Empty;
             var modifiedTime = long.MinValue;
