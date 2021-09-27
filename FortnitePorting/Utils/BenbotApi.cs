@@ -26,7 +26,7 @@ namespace FortnitePorting.Utils
             Logger.Log($"Getting Keys for {response.version}");
             
             config.MainKey = response.mainKey;
-            config.DynamicKeys.Clear();
+            config.DynamicKeys = new List<Config.KeyEntry>();
 
             foreach (var newEntry in response.dynamicKeys.Select(entry => new Config.KeyEntry {FileName = entry.fileName.Replace("FortniteGame/Content/Paks/", ""), Key = entry.key }))
             {

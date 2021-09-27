@@ -1,3 +1,4 @@
+using CUE4Parse.UE4.Objects.Core.Math;
 using System.Collections.Generic;
 
 namespace FortnitePorting.Utils
@@ -15,6 +16,7 @@ namespace FortnitePorting.Utils
         {
             public string MaterialPath;
             public int MaterialOverrideIndex;
+            public bool IsOverride = false;
             public MaterialParameters MaterialParameters;
         }
         
@@ -27,6 +29,12 @@ namespace FortnitePorting.Utils
             public MaterialParameters MaterialParameters;
         }
         
+        public class SubSurfaceProfile
+        {
+            public float ScatterRadius;
+            public FLinearColor Color;
+        }
+
         public class MaterialParameters
         {
             public List<TextureParameter> TextureParameters = new();
@@ -34,8 +42,9 @@ namespace FortnitePorting.Utils
             public List<VectorParameter> VectorParameters = new();
             public List<VectorParameter> ComponentMaskParameters = new();
             public List<SwitchParameter> SwitchParameters = new();
-            public VectorParameter.Color SubsurfaceColor;
+            public SubSurfaceProfile SubsurfaceInfo;
         }
+
         public class VariantMaterialParameters
         {
             public string MaterialToAlter;
@@ -43,41 +52,29 @@ namespace FortnitePorting.Utils
             public List<ScalarParameter> FloatParameters = new();
             public List<VectorParameter> ColorParameters = new();
         }
+
         public class TextureParameter
         {
             public string Info;
             public string Value;
         }
+
         public class ScalarParameter
         {
             public string Info;
             public float Value;
         }
+
         public class SwitchParameter
         {
             public string Info;
             public bool Value;
         }
+
         public class VectorParameter
         {
             public string Info;
-            public Color Value;
-
-            public class Color
-            {
-                private float r;
-                private float g;
-                private float b;
-                private float a;
-
-                public Color(float r, float g, float b, float a)
-                {
-                    this.r = r;
-                    this.g = g;
-                    this.b = b;
-                    this.a = a;
-                }
-            }
+            public FLinearColor Value;
         }
 
         public class Processed
@@ -87,7 +84,7 @@ namespace FortnitePorting.Utils
             public List<VariantMaterial> VariantMaterials { get; set; } = new();
             public List<VariantMaterialParameters> VariantMaterialParameters { get; set; } = new();
         }
-        
+
         public enum EFortCustomPartType
         {
             Head,
